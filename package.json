@@ -1,6 +1,6 @@
 {
   "name": "bugsnag-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI for the BugSnag API — read-only error fetching for AI analysis. AI agents and shell automation.",
   "keywords": [
     "bugsnag",

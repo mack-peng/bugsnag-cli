@@ -257,9 +257,12 @@ const eventFields = declareCommand({
   category: 'events',
   description: 'List the event fields available for filters and pivots',
   options: z.object({
+    'per-page': numberArg.optional().describe('results per page (default 100)'),
+    limit: numberArg.optional().describe('maximum results to fetch (default 100)'),
     project: z.string().optional().describe('project id or name (or default project)'),
   }),
   project: 'id',
+  list: true,
   api: {
     method: 'GET',
     path: ({ projectId }) => {
@@ -267,7 +270,6 @@ const eventFields = declareCommand({
       return `/projects/${projectId}/event_fields`;
     },
   },
-  transformRequest: () => ({ per_page: 100 }),
 });
 
 

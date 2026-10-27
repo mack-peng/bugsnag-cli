@@ -21,6 +21,7 @@ import type { Config } from '../config/config';
 const globalOptions = ['json', 'raw', 'help', 'h', 'version', 'v', 'p', 'profile', 'auth-token', 'base-url'];
 const booleanGlobalOptions = ['help', 'json', 'raw', 'version', 'v', 'h'];
 const queryExcludedFlags = ['filter', 'per-page', 'limit', 'project', 'organization', 'full-reports', 'summary-size', 'buckets-count', 'pivots'];
+const listPerPageDefaults: Record<string, number> = { 'event-fields': 100 };
 
 const textViewTransforms: Record<string, (data: any) => any> = {
   'org-list': orgListRows,
@@ -338,8 +339,12 @@ async function injectContext(
 
   if (command.organization && parsed.organization)
     parsed.organizationId = await resolveOrg(client, parsed.organization);
-  if (command.project === 'id' && parsed.project)
+  if (command.project === 'id' && parsed.project) {
+    const orgRef = parsed.organization ?? config.organization;
+    if (orgRef && !parsed.organizationId)
+      parsed.organizationId = await resolveOrg(client, orgRef);
     parsed.projectId = await resolveProject(client, parsed.organizationId, parsed.project);
+  }
 }
 
 async function dispatchRequest(
@@ -354,7 +359,7 @@ async function dispatchRequest(
   const transformed = command.transformRequest ? command.transformRequest(parsed) : parsed;
 
   if (command.list) {
-    const perPage = parsed['per-page'] !== undefined ? parsed['per-page'] : 30;
+    const perPage = parsed['per-page'] !== undefined ? parsed['per-page'] : listPerPageDefaults[command.name] ?? 30;
     const limit = parsed.limit !== undefined ? parsed.limit : 100;
     const queryParams = { ...queryFlags, ...filterQueryParams(transformed), per_page: perPage };
     return client.list('GET', pathStr, { queryParams, filterParams: filterParamsFor(parsed), limit });

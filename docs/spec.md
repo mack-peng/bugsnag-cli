@@ -71,7 +71,7 @@
 |------|-----|------|
 | `org-list` | `GET /user/organizations` | `--per-page` `--limit` |
 | `project-list` | `GET /organizations/{organization_id}/projects` | `--organization`、`--q`、`--sort`（created_at/name/favorite）、`--direction`、`--per-page` `--limit` |
-| `project-show` | `GET /projects/{project_id}` | positional `<projectId>` |
+| `project-show` | `GET /projects/{project_id}` | `--project`（id 或名称/slug，或默认 project） |
 | `error-list` | `GET /projects/{project_id}/errors` | `--project`、`--sort`（last_seen/first_seen/users/events）、`--direction`、`--base <ISO>`、`--filter`、`--per-page` `--limit` |
 | `error-show` | `GET /projects/{project_id}/errors/{error_id}` | positional `<errorId>` |
 | `error-events` | `GET /projects/{project_id}/errors/{error_id}/events` | `<errorId>` positional、`--full-reports`（默认 true）、`--sort`（timestamp）、`--direction`、`--base`、`--filter`、`--per-page` `--limit` |
@@ -79,8 +79,8 @@
 | `event-show` | `GET /projects/{project_id}/events/{event_id}` | positional `<eventId>` |
 | `error-pivots` | `GET /projects/{project_id}/errors/{error_id}/pivots` | `<errorId>` positional、`--pivots <f1,f2>`、`--summary-size <n>`、`--filter`、`--per-page` `--limit` |
 | `error-pivot-values` | `GET /projects/{project_id}/errors/{error_id}/pivots/{event_field_display_id}/values` | positionals `<errorId> <fieldId>`、`--sort`、`--base`、`--filter` |
-| `error-trend` | `GET /projects/{project_id}/errors/{error_id}/trend` | `<errorId>` positional、`--buckets-count <n>`（默认模式）、`--resolution`（互斥切换到 resolution 模式）、`--filter` |
-| `event-fields` | `GET /projects/{project_id}/event_fields` | 列出可用 pivot/filter 字段（拼 filter/pivots 参数时给 agent 导航） |
+| `error-trend` | `GET /projects/{project_id}/errors/{error_id}/trend` | `<errorId>` positional、`--buckets-count <n>`（默认模式，默认 30）、`--resolution`（互斥切换，枚举 `1m/5m/30m/2h/12h`）、`--filter` |
+| `event-fields` | `GET /projects/{project_id}/event_fields` | `--per-page`（默认 100）、`--limit`；列出可用 pivot/filter 字段（拼 filter/pivots 参数时给 agent 导航） |
 | `config-show/set/list/use/new/path` | 本地 | 同 glitchtip 语义 |
 | `skill-install` / `skill-uninstall` | 本地 | 同 glitchtip 模板 → bugsnag 版 SKILL.md |
 

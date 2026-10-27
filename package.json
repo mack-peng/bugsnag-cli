@@ -23,7 +23,8 @@
   "files": [
     "bin",
     "dist",
-    "docs",
+    "docs/guide",
+    "docs/spec.md",
     "README.md",
     "LICENSE",
     "AGENTS.md"

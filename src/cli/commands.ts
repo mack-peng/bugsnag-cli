@@ -112,7 +112,7 @@ const projectList = declareCommand({
   options: z.object({
     organization: z.string().optional().describe('organization id or name (or default organization)'),
     q: z.string().optional().describe('search projects by name'),
-    sort: projectSortArg.optional().describe('sort field (default created_at)'),
+    sort: projectSortArg.optional().describe("sort field: created_at|name|favorite (default created_at)"),
     direction: z.enum(['asc', 'desc']).optional().describe('sort direction (default desc; favorite sorts asc)'),
     'per-page': numberArg.optional().describe('results per page (default 30)'),
     limit: numberArg.optional().describe('cumulative fetch limit (default 100)'),
@@ -154,7 +154,7 @@ const errorList = declareCommand({
   description: 'List the errors on a project',
   options: z.object({
     project: z.string().optional().describe('project id or name (or default project)'),
-    sort: errorSortArg.optional().describe('sort field (default last_seen; unsorted for complete results)'),
+    sort: errorSortArg.optional().describe('sort field: last_seen|first_seen|users|events|unsorted (default last_seen; unsorted returns complete results)'),
     direction: z.enum(['asc', 'desc']).optional().describe('sort direction (default desc)'),
     base: z.string().optional().describe('only events occurring before this time (ISO8601 UTC or relative like 7d)'),
     filter: stringArrayArg.optional().describe('filter expression, repeatable: k=v, k!=v, k:empty=true|false'),
@@ -205,7 +205,7 @@ const errorEvents = declareCommand({
   options: z.object({
     project: z.string().optional().describe('project id or name (or default project)'),
     'full-reports': z.boolean().default(true).describe('fetch full event reports (default true)'),
-    sort: timestampSortArg.optional().describe('sort field (timestamp only)'),
+    sort: timestampSortArg.optional().describe('sort field: timestamp (fixed enum)'),
     direction: z.enum(['asc', 'desc']).optional().describe('sort direction (default desc)'),
     base: z.string().optional().describe('only events occurring before this time (ISO8601 UTC or relative like 7d)'),
     filter: stringArrayArg.optional().describe('filter expression, repeatable: k=v, k!=v, k:empty=true|false'),

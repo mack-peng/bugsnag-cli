@@ -1,0 +1,29 @@
+# Dependency directories
+node_modules/
+
+# Build output
+dist
+
+# Coverage
+coverage
+*.lcov
+
+# Compiled TypeScript cache
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+
+# Environment / secrets
+.env
+.env.*
+
+# bugsnag-cli config (local credentials)
+.bugsnagrc
+
+# OS
+.DS_Store
+
+# npm
+*.tgz

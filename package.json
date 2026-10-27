@@ -1,0 +1,48 @@
+{
+  "name": "bugsnag-cli",
+  "version": "0.1.0",
+  "description": "CLI for the BugSnag API — read-only error fetching for AI analysis. AI agents and shell automation.",
+  "keywords": [
+    "bugsnag",
+    "bugsnag-analytics",
+    "cli",
+    "error-monitoring",
+    "errors",
+    "crash-reports",
+    "agent",
+    "automation"
+  ],
+  "homepage": "https://github.com/mack-peng/bugsnag-cli#readme",
+  "repository": "github:mack-peng/bugsnag-cli",
+  "license": "MIT",
+  "author": "strikingly",
+  "main": "dist/index.js",
+  "bin": {
+    "bugsnag-cli": "./bin/bugsnag-cli.js"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "docs",
+    "README.md",
+    "LICENSE",
+    "AGENTS.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node scripts/build.js",
+    "typecheck": "tsc --noEmit",
+    "test": "npx tsx --test tests/*.test.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.23.0",
+    "typescript": "^5.5.0"
+  }
+}

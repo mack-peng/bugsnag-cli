@@ -194,7 +194,8 @@ Performance endpoints use the same event-style filters. Discover fields with `ev
 ### Pagination
 
 - **Link pagination**: errors, events, error pivots, pivot values, releases, release groups.
-- **Offset pagination**: span groups, page loads, starred span groups, comments.
+- **Offset pagination**: span groups, page loads, comments.
+- **Page-token / Link**: starred span groups.
 
 Every list command supports `--limit` (default 100); offset commands also support `--offset`. There is no `--all` and no unbounded traversal. `release-list` caps `--per-page` at 10.
 

@@ -150,6 +150,40 @@ bugsnag-cli error-pivot-values <errorId> user.email --project my-app
 bugsnag-cli error-trend <errorId> --resolution 2h --project my-app
 ```
 
+### Project Health & Releases
+
+```bash
+bugsnag-cli project-pivots --project my-app --summary-size 10
+bugsnag-cli project-pivot-values app.release_stage --project my-app
+bugsnag-cli project-trend --project my-app --buckets-count 30
+bugsnag-cli project-stability --project my-app
+bugsnag-cli saved-search-list --project my-app
+bugsnag-cli release-list --project my-app --limit 10
+bugsnag-cli release-group-list --project my-app --release-stage-name production
+```
+
+### Performance
+
+```bash
+bugsnag-cli span-group-list --project my-app --sort duration_p95 --filter span.since=7d
+bugsnag-cli span-group-show <spanGroupId> --project my-app
+bugsnag-cli span-group-spans <spanGroupId> --project my-app
+bugsnag-cli trace-fields --project my-app
+bugsnag-cli trace-spans <traceId> --project my-app --from <ISO> --to <ISO>
+bugsnag-cli performance-overview --project my-app
+```
+
+### Comments & Triage
+
+```bash
+bugsnag-cli comment-list <errorId> --project my-app
+bugsnag-cli error-update <errorId> --project my-app --write --operation fix
+```
+
+The CLI is read-only by default. Only `error-update` / `error-bulk-update` mutate state and require `--write`.
+
+For the full command surface, run `bugsnag-cli --help` (42 API commands).
+
 ### The Standard Root-Cause Pull Chain
 
 1. `error-list` — volume overview (sort by events)
@@ -157,16 +191,18 @@ bugsnag-cli error-trend <errorId> --resolution 2h --project my-app
 3. `error-events --limit 5` — compare recent occurrences
 4. `error-pivots --summary-size 5` — browser / user / release breakdown
 5. `error-trend --resolution 2h` — spike vs chronic
+6. `comment-list` — existing investigation context
+7. `project-trend` / `project-stability` — zoom out to project health
 
 ### Filters
 
-`--filter` is repeatable: `k=v` (equals), `k=v1,v2` (any of), `k!=v` (not equals), `k:empty=true|false`. Field ids come from `event-fields`.
+`--filter` is repeatable: `k=v` (equals), `k=v1,v2` (any of), `k!=v` (not equals), `k:empty=true|false`. Field ids come from `event-fields`; performance filters use `trace-fields`.
 
 ---
 
 ## Pagination (never unbounded)
 
-Every list command takes `--per-page <n>` (default 30) and `--limit <n>` (default 100). Traversal follows `Link: rel="next"` and stops at the limit. There is no `--all` — do not wait for "all pages"; raise `--limit` explicitly if you need more.
+Every list command takes `--limit <n>` (default 100). Link-paginated commands also take `--per-page <n>` (default 30); offset-paginated commands take `--offset <n>` (default 0). Traversal stops at the limit; there is no `--all` — do not wait for "all pages"; raise `--limit` explicitly if you need more.
 
 ---
 

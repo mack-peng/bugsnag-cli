@@ -298,7 +298,7 @@ const errorPivots = declareCommand({
     },
   },
   transformRequest: ({ pivots, 'summary-size': summarySize }) => ({
-    ...(pivots ? { pivots: pivots.split(',').map(s => s.trim()).filter(Boolean) } : {}),
+    ...(pivots ? { 'pivots[]': pivots.split(',').map(s => s.trim()).filter(Boolean) } : {}),
     ...(summarySize !== undefined ? { summary_size: summarySize } : {}),
   }),
   list: true,
@@ -350,6 +350,8 @@ const errorTrend = declareCommand({
   transformRequest: ({ 'buckets-count': bucketsCount, resolution }) => {
     if (bucketsCount !== undefined && resolution)
       throw new Error('--buckets-count and --resolution are mutually exclusive');
+    if (bucketsCount !== undefined && (bucketsCount < 1 || bucketsCount > 50))
+      throw new Error('--buckets-count must be between 1 and 50');
     if (resolution)
       return { resolution };
     return { buckets_count: bucketsCount ?? 30 };
@@ -403,7 +405,7 @@ const projectPivots = declareCommand({
     },
   },
   transformRequest: ({ pivots, 'summary-size': summarySize }) => ({
-    ...(pivots ? { pivots: pivots.split(',').map((s: string) => s.trim()).filter(Boolean) } : {}),
+    ...(pivots ? { 'pivots[]': pivots.split(',').map((s: string) => s.trim()).filter(Boolean) } : {}),
     ...(summarySize !== undefined ? { summary_size: summarySize } : {}),
   }),
 });
@@ -455,6 +457,8 @@ const projectTrend = declareCommand({
   transformRequest: ({ 'buckets-count': bucketsCount, resolution }) => {
     if (bucketsCount !== undefined && resolution)
       throw new Error('--buckets-count and --resolution are mutually exclusive');
+    if (bucketsCount !== undefined && (bucketsCount < 1 || bucketsCount > 50))
+      throw new Error('--buckets-count must be between 1 and 50');
     if (resolution)
       return { resolution };
     return { buckets_count: bucketsCount ?? 30 };
@@ -946,7 +950,7 @@ const starredSpanGroupList = declareCommand({
     },
   },
   transformRequest: ({ categories }) => ({
-    ...(categories ? { categories: categories.split(',').map((s: string) => s.trim()).filter(Boolean) } : {}),
+    ...(categories ? { 'categories[]': categories.split(',').map((s: string) => s.trim()).filter(Boolean) } : {}),
   }),
 });
 

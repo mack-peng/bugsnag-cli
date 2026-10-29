@@ -151,6 +151,18 @@ describe('command', () => {
       );
     });
 
+    it('rejects buckets-count outside 1..50', () => {
+      const transform = commands['project-trend'].transformRequest!;
+      assert.throws(
+        () => transform({ projectId: 'p', 'buckets-count': 60 }),
+        /between 1 and 50/
+      );
+      assert.throws(
+        () => transform({ projectId: 'p', 'buckets-count': 0 }),
+        /between 1 and 50/
+      );
+    });
+
     it('requires severity for override_severity', () => {
       const transform = commands['error-update'].transformRequest!;
       assert.throws(
@@ -188,6 +200,22 @@ describe('command', () => {
       assert.strictEqual(
         path({ projectId: 'p', 'error-ids': 'a,b' }),
         '/projects/p/errors?error_ids=a&error_ids=b'
+      );
+    });
+
+    it('serializes pivots as a bracketed array', () => {
+      const transform = commands['project-pivots'].transformRequest!;
+      assert.deepStrictEqual(
+        transform({ projectId: 'p', pivots: 'a,b' }),
+        { 'pivots[]': ['a', 'b'] }
+      );
+    });
+
+    it('serializes categories as a bracketed array', () => {
+      const transform = commands['starred-span-group-list'].transformRequest!;
+      assert.deepStrictEqual(
+        transform({ projectId: 'p', categories: 'app_start,network' }),
+        { 'categories[]': ['app_start', 'network'] }
       );
     });
   });

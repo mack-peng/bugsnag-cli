@@ -350,4 +350,55 @@ describe('BugsnagClient.list offset pagination', () => {
       mock.restore();
     }
   });
+
+  it('handles object-wrapped responses', async () => {
+    const mock = stubFetch([
+      { status: 200, body: { data: [{ id: '1' }, { id: '2' }] } },
+      { status: 200, body: { data: [{ id: '3' }] } },
+    ]);
+    try {
+      const result = await client.list('GET', '/projects/p/span_groups', {
+        queryParams: { per_page: 2 },
+        pagination: 'offset',
+      });
+      assert.deepStrictEqual(result.map(r => r.id), ['1', '2', '3']);
+      assert.strictEqual(mock.calls.length, 2);
+    } finally {
+      mock.restore();
+    }
+  });
+
+  it('starts at a custom offset', async () => {
+    const mock = stubFetch([
+      { status: 200, body: [{ id: '6' }, { id: '7' }] },
+      { status: 200, body: [{ id: '8' }] },
+    ]);
+    try {
+      const result = await client.list('GET', '/projects/p/span_groups', {
+        queryParams: { per_page: 2 },
+        pagination: 'offset',
+        offset: 5,
+      });
+      assert.deepStrictEqual(result.map(r => r.id), ['6', '7', '8']);
+      assert.match(mock.calls[0].url, /offset=5/);
+      assert.match(mock.calls[1].url, /offset=7/);
+    } finally {
+      mock.restore();
+    }
+  });
+
+  it('falls back to the default per_page for an invalid value', async () => {
+    const mock = stubFetch([
+      { status: 200, body: [{ id: '1' }] },
+    ]);
+    try {
+      await client.list('GET', '/projects/p/span_groups', {
+        queryParams: { per_page: 'abc' },
+        pagination: 'offset',
+      });
+      assert.match(mock.calls[0].url, /per_page=30/);
+    } finally {
+      mock.restore();
+    }
+  });
 });

@@ -21,8 +21,9 @@ export interface ListOptions {
   offset?: number;
 }
 
-const DEFAULT_TIMEOUT = 30000;
-const DEFAULT_LIMIT = 100;
+export const DEFAULT_TIMEOUT = 30000;
+export const DEFAULT_LIMIT = 100;
+export const DEFAULT_PER_PAGE = 30;
 
 const SORTED_RESULTS_CODE = 60000;
 
@@ -103,7 +104,8 @@ export class BugsnagClient {
     const limit = options.limit ?? DEFAULT_LIMIT;
 
     if (options.pagination === 'offset') {
-      const perPage = Number(options.queryParams?.per_page ?? 30);
+      const rawPerPage = Number(options.queryParams?.per_page ?? DEFAULT_PER_PAGE);
+      const perPage = Number.isInteger(rawPerPage) && rawPerPage > 0 ? rawPerPage : DEFAULT_PER_PAGE;
       let offset = options.offset ?? 0;
       while (results.length < limit) {
         const page = await this.request(method, path, {

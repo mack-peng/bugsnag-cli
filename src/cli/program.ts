@@ -7,7 +7,7 @@ import { commands } from './commands';
 import { TextOutput, JsonOutput } from './output';
 import { loadConfig, maskConfig, writeRcConfig, rcFilePath, getRcConfig, setActiveProfile, createProfile } from '../config/config';
 import { createAuthProvider } from '../api/auth';
-import { BugsnagClient } from '../api/client';
+import { BugsnagClient, DEFAULT_LIMIT, DEFAULT_PER_PAGE } from '../api/client';
 import { resolveOrg, resolveProject } from '../api/resolve';
 import { serializeFilters } from '../api/filters';
 import type { FilterParam } from '../api/client';
@@ -530,18 +530,19 @@ async function dispatchRequest(
   cmdEntry: HelpEntry
 ): Promise<any> {
   const queryFlags = extractQueryFlags(args, cmdEntry, queryExcludedFlags);
-  const transformed = command.transformRequest ? command.transformRequest(parsed) : parsed;
+  const transformed = command.transformRequest ? command.transformRequest(parsed) : null;
+  const transformedParams = transformed ? filterQueryParams(transformed) : {};
 
   if (command.list) {
     const perPage = parsed['per-page'] !== undefined
       ? parsed['per-page']
-      : command.perPage?.default ?? listPerPageDefaults[command.name] ?? 30;
+      : command.perPage?.default ?? listPerPageDefaults[command.name] ?? DEFAULT_PER_PAGE;
     if (command.perPage?.max && perPage > command.perPage.max)
       throw new Error(`--per-page must be <= ${command.perPage.max}`);
-    const limit = parsed.limit !== undefined ? parsed.limit : 100;
+    const limit = parsed.limit !== undefined ? parsed.limit : DEFAULT_LIMIT;
     const queryParams = {
       ...queryFlags,
-      ...filterQueryParams(transformed),
+      ...transformedParams,
       per_page: perPage,
       ...(command.pagination !== 'offset' && parsed.offset !== undefined ? { offset: parsed.offset } : {}),
     };
@@ -558,7 +559,7 @@ async function dispatchRequest(
   const isBodyMethod = method !== 'GET' && method !== 'DELETE';
   const queryParams = isBodyMethod
     ? {}
-    : { ...queryFlags, ...filterQueryParams(transformed) };
+    : { ...queryFlags, ...transformedParams };
   const apiOptions: Record<string, any> = { queryParams };
   if (isBodyMethod)
     apiOptions.body = transformed;

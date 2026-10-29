@@ -105,8 +105,10 @@ bugsnag-cli --json span-group-timeline <spanGroupId> --project <p>
 bugsnag-cli --json span-group-distribution <spanGroupId> --project <p>
 bugsnag-cli --json span-group-performance-targets <spanGroupId> --project <p>
 bugsnag-cli --json span-group-spans <spanGroupId> --project <p>
+bugsnag-cli --json span-group-spans-by-name <category> <name> --project <p>
 bugsnag-cli --json starred-span-group-list --project <p>
 bugsnag-cli --json page-load-span-group-list --project <p>
+bugsnag-cli --json page-load-span-group-show <pageLoadSpanGroupId> --project <p>
 bugsnag-cli --json trace-fields --project <p>
 bugsnag-cli --json trace-spans <traceId> --project <p> --from <ISO> --to <ISO>
 bugsnag-cli --json org-trace-spans <traceId> --organization <org> --from <ISO> --to <ISO>
@@ -151,6 +153,7 @@ formatting. In ${BT}--json${BT} mode, errors are ${BT}{ "isError": true, "error"
 - Starred span groups use ${BT}page_token${BT}/Link pagination in the live API.
 - Both modes respect ${BT}--limit${BT} (default 100). There is no ${BT}--all${BT}; traversal is bounded by design.
 - ${BT}release-list${BT} caps ${BT}--per-page${BT} at 10.
+- Offset traversal assumes a short page means the end; an endpoint that silently truncates ${BT}per_page${BT} can stop early.
 
 ## Filters
 
@@ -220,10 +223,23 @@ export function buildPitfallsMd(): string {
 - ${BT}--filter${BT} is repeatable. Only ${BT}k=v${BT}, ${BT}k=v1,v2${BT}, ${BT}k!=v${BT}, and
   ${BT}k:empty=true|false${BT} are supported.
 - Serialized as ${BT}filters[FIELD][][type]=...${BT} and ${BT}filters[FIELD][][value]=...${BT}.
+- Array query params use bracketed keys: ${BT}--pivots${BT} sends ${BT}pivots[]${BT};
+  ${BT}--categories${BT} sends ${BT}categories[]${BT}.
 - Performance endpoints accept the same event-style filters. The
   ${BT}PerformanceFilter[]${BT} shape returns HTTP 400; do not use it.
 - Time filters such as ${BT}span.since${BT} and ${BT}event.since${BT} accept ISO 8601 UTC or
   relative values like ${BT}7d${BT}; ${BT}ne${BT} is not supported on time filters.
+
+## Path Encoding
+
+- Path IDs preserve existing ${BT}%XX${BT} escapes and encode raw characters once.
+- A literal ${BT}%XX${BT} sequence in an ID is indistinguishable from an escape and is
+  passed through; this is a documented heuristic.
+
+## Span Pagination
+
+- ${BT}span-group-spans${BT} and ${BT}span-group-spans-by-name${BT} pagination semantics are
+  unverified without span data; prefer ${BT}span-group-spans${BT} by ID when possible.
 
 ## Trend Path Drift
 

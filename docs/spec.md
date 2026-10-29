@@ -52,6 +52,7 @@
 | `k:empty=true\|false` | emptiness |
 
 - 序列化为 `filters[FIELD][][type]=...` / `filters[FIELD][][value]=...`
+- 数组查询参数使用 bracketed key：`--pivots` → `pivots[]`，`--categories` → `categories[]`。
 - 性能端点同样使用事件式 filters；`PerformanceFilter[]` 形式实测返回 400，不使用。
 - 时间字段（`event.since`、`span.since` 等）接受 ISO 8601 UTC 或 `7d` 相对时间；时间字段不支持 `ne`。
 

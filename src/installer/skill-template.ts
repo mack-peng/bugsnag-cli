@@ -1,190 +1,260 @@
 const FRONTMATTER_DELIM = '---';
 const BT = '`';
-const BT3 = '```';
+const FENCE = '```';
 
 export function buildSkillMd(): string {
-  return [
-    FRONTMATTER_DELIM,
-    'name: bugsnag-cli',
-    'description: >',
-    '  CLI for the BugSnag API. Use bugsnag-cli for all read-only BugSnag operations:',
-    '  listing organizations and projects, fetching errors, fetching events with full',
-    '  stack traces, pivots and trends for AI root-cause analysis. Prefer bugsnag-cli',
-    '  over raw BugSnag API calls -- it handles auth (token header), Link-header',
-    '  pagination, 429 rate-limit retry, sorted-results-limit fallback, and output',
-    '  formatting.',
-    'metadata:',
-    '  requires:',
-    '    bins: ["bugsnag-cli"]',
-    FRONTMATTER_DELIM,
-    '',
-    '# bugsnag-cli -- BugSnag CLI Skill',
-    '',
-    'Use bugsnag-cli for ANY BugSnag API read operation. It handles authentication',
-    '(Authorization: token), Link-header pagination, 429 rate-limit retry, the',
-    '60000 sorted-results-limit downgrade, and JSON output automatically.',
-    'It is READ-ONLY: no command mutates BugSnag state. To resolve, discard or',
-    'edit errors, use the BugSnag dashboard.',
-    '',
-    '## Prerequisite: Authentication',
-    '',
-    'Before any API command works, configure credentials:',
-    '',
-    BT3 + 'bash',
-    'bugsnag-cli config-set auth-token <personal-auth-token>   # from app.bugsnag.com/settings/my-account',
-    'bugsnag-cli config-set organization <org-id-or-name>      # optional default organization',
-    'bugsnag-cli config-set project <project-id-or-name>       # optional default project',
-    BT3,
-    '',
-    'Config is stored in ' + BT + '~/.bugsnagrc' + BT + '. Verify with ' + BT + 'bugsnag-cli config-show' + BT + '.',
-    '',
-    'Override per-command: ' + BT + 'bugsnag-cli --auth-token <t> --base-url <url> <command>' + BT + '.',
-    '',
-    'Multiple instances (profiles): ' + BT + 'bugsnag-cli config-new staging' + BT + ' -> ' + BT + 'bugsnag-cli -p staging config-set ...' + BT,
-    '',
-    '## Command Discovery',
-    '',
-    'Do NOT memorize all commands. Use:',
-    '',
-    BT3 + 'bash',
-    'bugsnag-cli --help                    # all commands grouped by category',
-    'bugsnag-cli error-list --help         # specific command: args, options, description',
-    BT3,
-    '',
-    'Commands follow a flat naming convention: ' + BT + '<resource>-<action>' + BT + ' (e.g.',
-    'error-list, error-events, error-pivots, error-trend).',
-    '',
-    '## Command Quick Reference',
-    '',
-    BT3 + 'bash',
-    'bugsnag-cli --json org-list                                   # user organizations',
-    'bugsnag-cli --json project-list --organization <org>          # organization projects',
-    'bugsnag-cli --json project-show --project <project>',
-    '',
-    'bugsnag-cli --json error-list --project <p> --filter error.status=open',
-    'bugsnag-cli --json error-show <errorId> --project <p>',
-    '',
-    'bugsnag-cli --json error-latest-event <errorId>               # fastest full stack, no --project',
-    'bugsnag-cli --json error-events <errorId> --limit 5           # full reports by default',
-    'bugsnag-cli --json event-show <eventId> --project <p>',
-    'bugsnag-cli --json event-fields --project <p>                 # discover filter/pivot field ids',
-    '',
-    'bugsnag-cli --json error-pivots <errorId> --summary-size 5',
-    'bugsnag-cli --json error-pivot-values <errorId> app.release_stage',
-    'bugsnag-cli --json error-trend <errorId> --buckets-count 30   # or --resolution 5m (exclusive)',
-    BT3,
-    '',
-    '## Standard Error Analysis Pull Chain',
-    '',
-    '1. ' + BT + 'error-latest-event <errorId>' + BT + ' -- fastest way to get the full stack trace.',
-    '2. ' + BT + 'error-events <errorId> --limit 5' + BT + ' -- full reports, compare occurrences for a common cause.',
-    '3. ' + BT + 'error-pivots <errorId> --summary-size 5' + BT + ' -- dimension breakdown (users, app versions, releases).',
-    '4. ' + BT + 'error-trend <errorId> --buckets-count 30' + BT + ' -- time clustering: new regression or chronic issue.',
-    '',
-    'If unsure which filter or pivot fields a project supports, run ' + BT + 'event-fields --project <p>' + BT + ' first.',
-    '',
-    '## Output Modes',
-    '',
-    'Always pass ' + BT + '--json' + BT + ' when consuming output programmatically:',
-    '',
-    BT3 + 'bash',
-    'bugsnag-cli --json error-list --project <p> | jq ' + BT + "'.[] | {id, status, events}'" + BT,
-    BT3,
-    '',
-    'Without ' + BT + '--json' + BT + ', output is human-readable tables (arrays) or formatted JSON',
-    '(objects), with long strings truncated for readability. ' + BT + '--raw' + BT + ' skips all',
-    'formatting. In ' + BT + '--json' + BT + ' mode, errors are ' + BT + '{ "isError": true, "error": "..." }' + BT + '.',
-    '',
-    '## Anti-patterns',
-    '',
-    '- Always use ' + BT + '--json' + BT + ' when consuming output programmatically.',
-    '- Filter syntax is limited: ' + BT + 'k=v' + BT + ' (eq), ' + BT + 'k=v1,v2' + BT + ' (eq each), ' + BT + 'k!=v' + BT + ' (ne),',
-    '  ' + BT + 'k:empty=true|false' + BT + '. Arbitrary search strings are not supported.',
-    '- ' + BT + '--project' + BT + ' / ' + BT + '--organization' + BT + ' accept 24-hex API ids directly, or names/slugs',
-    '  which the CLI resolves automatically.',
-    '- ' + BT + 'error-latest-event' + BT + ' needs no --project; every other project-scoped command does',
-    '  (or needs a default project via config).',
-    '- List commands stop at ' + BT + '--limit' + BT + ' (default 100). There is no ' + BT + '--all' + BT + ';',
-    '  traversal is bounded by design.',
-    '- 429 rate limits (Retry-After) and the 60000 sorted-limit downgrade are handled automatically.',
-    '- Config commands (config-set, config-show, etc.) are local -- no API call.',
-    '- This CLI is READ-ONLY. Do not attempt to resolve/discard errors or change project',
-    '  settings with it; that belongs to the BugSnag dashboard.',
-    '',
-  ].join('\n');
+  return `${FRONTMATTER_DELIM}
+name: bugsnag-cli
+description: >
+  CLI for the BugSnag API. Use bugsnag-cli for BugSnag read operations and
+  explicit error triage: listing organizations and projects, fetching errors,
+  events, project trends, releases, saved searches, comments, and performance
+  span groups and traces. Mutating commands require --write. Prefer bugsnag-cli
+  over raw BugSnag API calls -- it handles auth, Link/offset pagination, 429
+  retry, sorted-results fallback, and output formatting.
+metadata:
+  requires:
+    bins: ["bugsnag-cli"]
+${FRONTMATTER_DELIM}
+
+# bugsnag-cli -- BugSnag CLI Skill
+
+Use bugsnag-cli for BugSnag API operations. It handles authentication
+(Authorization: token), Link-header and offset pagination, 429 retry, the
+60000 sorted-results-limit downgrade, and JSON output automatically.
+
+The CLI is read-only by default. The only mutating commands are
+${BT}error-update${BT} and ${BT}error-bulk-update${BT}; both require ${BT}--write${BT}.
+Delete, issue linking, and comment writes are not supported; use the BugSnag
+dashboard for those.
+
+## Prerequisite: Authentication
+
+${FENCE}bash
+bugsnag-cli config-set auth-token <personal-auth-token>   # from app.bugsnag.com/settings/my-account
+bugsnag-cli config-set organization <org-id-or-name>      # optional default organization
+bugsnag-cli config-set project <project-id-or-name>       # optional default project
+${FENCE}
+
+Config is stored in ${BT}~/.bugsnagrc${BT}. Verify with ${BT}bugsnag-cli config-show${BT}.
+Override per-command: ${BT}bugsnag-cli --auth-token <t> --base-url <url> <command>${BT}.
+Multiple instances (profiles): ${BT}bugsnag-cli config-new staging${BT} -> ${BT}bugsnag-cli -p staging config-set ...${BT}
+
+## Command Discovery
+
+Do NOT memorize all commands. Use:
+
+${FENCE}bash
+bugsnag-cli --help                    # all commands grouped by category
+bugsnag-cli span-group-list --help    # specific command: args, options, description
+${FENCE}
+
+Commands follow a flat naming convention: ${BT}<resource>-<action>${BT} (e.g.
+error-list, project-trend, span-group-list).
+
+## Command Quick Reference
+
+Navigation and projects:
+
+${FENCE}bash
+bugsnag-cli --json org-list
+bugsnag-cli --json project-list --organization <org>
+bugsnag-cli --json project-show --project <project>
+${FENCE}
+
+Errors, events, and comments:
+
+${FENCE}bash
+bugsnag-cli --json error-list --project <p> --filter error.status=open
+bugsnag-cli --json error-show <errorId> --project <p>
+bugsnag-cli --json error-latest-event <errorId>
+bugsnag-cli --json error-events <errorId> --limit 5
+bugsnag-cli --json event-list --project <p> --limit 10
+bugsnag-cli --json event-show <eventId> --project <p>
+bugsnag-cli --json event-fields --project <p>
+bugsnag-cli --json comment-list <errorId> --project <p>
+${FENCE}
+
+Project health, pivots, trends, saves searches:
+
+${FENCE}bash
+bugsnag-cli --json project-pivots --project <p> --summary-size 10
+bugsnag-cli --json project-pivot-values app.release_stage --project <p>
+bugsnag-cli --json project-trend --project <p> --buckets-count 30
+bugsnag-cli --json project-stability --project <p>
+bugsnag-cli --json saved-search-list --project <p>
+bugsnag-cli --json saved-search-show <savedSearchId>
+${FENCE}
+
+Releases:
+
+${FENCE}bash
+bugsnag-cli --json release-list --project <p>
+bugsnag-cli --json release-show <releaseId> --project <p>
+bugsnag-cli --json release-group-list --project <p> --release-stage-name production
+bugsnag-cli --json release-group-show <releaseGroupId>
+${FENCE}
+
+Performance:
+
+${FENCE}bash
+bugsnag-cli --json span-group-list --project <p> --sort duration_p95 --filter span.since=7d
+bugsnag-cli --json span-group-summaries --project <p>
+bugsnag-cli --json span-group-show <spanGroupId> --project <p>
+bugsnag-cli --json span-group-timeline <spanGroupId> --project <p>
+bugsnag-cli --json span-group-distribution <spanGroupId> --project <p>
+bugsnag-cli --json span-group-performance-targets <spanGroupId> --project <p>
+bugsnag-cli --json span-group-spans <spanGroupId> --project <p>
+bugsnag-cli --json starred-span-group-list --project <p>
+bugsnag-cli --json page-load-span-group-list --project <p>
+bugsnag-cli --json trace-fields --project <p>
+bugsnag-cli --json trace-spans <traceId> --project <p> --from <ISO> --to <ISO>
+bugsnag-cli --json org-trace-spans <traceId> --organization <org> --from <ISO> --to <ISO>
+bugsnag-cli --json performance-overview --project <p>
+bugsnag-cli --json network-grouping-show --project <p>
+${FENCE}
+
+Triage writes (require ${BT}--write${BT}):
+
+${FENCE}bash
+bugsnag-cli error-update <errorId> --project <p> --write --operation fix
+bugsnag-cli error-update <errorId> --project <p> --write --operation assign --assigned-collaborator-id <id>
+bugsnag-cli error-update <errorId> --project <p> --write --operation snooze --reopen-if occurs_after --seconds 3600
+bugsnag-cli error-bulk-update --project <p> --write --error-ids id1,id2 --operation ignore
+${FENCE}
+
+## Standard Workflows
+
+1. Project error overview: ${BT}error-list --project <p> --sort events --filter error.status=open --filter event.since=1d${BT}.
+2. Single error deep dive: ${BT}error-latest-event <errorId>${BT} -> ${BT}error-events <errorId> --limit 5${BT} -> ${BT}error-pivots <errorId> --summary-size 5${BT} -> ${BT}error-trend <errorId>${BT}.
+3. Project health: ${BT}project-trend${BT} + ${BT}project-stability${BT} + ${BT}project-pivots${BT}.
+4. Release regression: ${BT}release-list --project <p>${BT} -> ${BT}release-group-list --project <p> --release-stage-name production${BT} -> compare error trends around the release.
+5. Performance triage: ${BT}trace-fields${BT} -> ${BT}span-group-list --sort duration_p95 --filter span.since=7d${BT} -> ${BT}span-group-show${BT} -> ${BT}span-group-spans${BT} or ${BT}trace-spans${BT}.
+6. Triage: ${BT}error-show${BT} to confirm the error, then ${BT}error-update --write${BT} and verify the returned status.
+
+## Output Modes
+
+Always pass ${BT}--json${BT} when consuming output programmatically:
+
+${FENCE}bash
+bugsnag-cli --json error-list --project <p> | jq '.[] | {id, status, events}'
+${FENCE}
+
+Without ${BT}--json${BT}, output is human-readable tables (arrays) or formatted JSON
+(objects), with long strings truncated for readability. ${BT}--raw${BT} skips all
+formatting. In ${BT}--json${BT} mode, errors are ${BT}{ "isError": true, "error": "..." }${BT}.
+
+## Pagination: Link and Offset
+
+- Event, error, pivot-value, release, and release-group lists use ${BT}Link: rel="next"${BT}.
+- Span groups, page loads, starred span groups, and comments use ${BT}offset${BT} + ${BT}per_page${BT}.
+- Both modes respect ${BT}--limit${BT} (default 100). There is no ${BT}--all${BT}; traversal is bounded by design.
+- ${BT}release-list${BT} caps ${BT}--per-page${BT} at 10.
+
+## Filters
+
+${BT}--filter${BT} is repeatable and supports:
+
+- ${BT}k=v${BT} (eq), ${BT}k=v1,v2${BT} (one eq per value)
+- ${BT}k!=v${BT} (ne)
+- ${BT}k:empty=true|false${BT} (emptiness)
+
+They serialize to ${BT}filters[FIELD][][type]=...${BT} and ${BT}filters[FIELD][][value]=...${BT}.
+Performance endpoints use the same event-style filters; do not send a
+PerformanceFilter[] object.
+
+Discover event fields with ${BT}event-fields --project <p>${BT} and trace fields with
+${BT}trace-fields --project <p>${BT}.
+
+## Anti-patterns
+
+- Always use ${BT}--json${BT} when consuming output programmatically.
+- Do not attempt delete, issue linking, or comment writes; they are not exposed.
+- Mutating commands require ${BT}--write${BT}; without it they fail by design.
+- ${BT}error-latest-event${BT} needs no ${BT}--project${BT}; every other project-scoped command does.
+- List commands stop at ${BT}--limit${BT} (default 100); there is no unbounded ${BT}--all${BT}.
+- 429 rate limits and the 60000 sorted-limit downgrade are handled automatically.
+- The live API uses singular ${BT}/trend${BT}; the plural ${BT}/trends${BT} path returns 404.
+`;
 }
 
 export function buildPitfallsMd(): string {
-  return [
-    '# bugsnag-cli Pitfalls & Boundaries',
-    '',
-    '## Read-Only Positioning',
-    '',
-    '- Every bugsnag-cli command is a GET. There is no discard, delete, update or',
-    '  status-change command.',
-    '- To resolve, reopen, ignore or delete errors, use the BugSnag dashboard.',
-    '',
-    '## Auth & Config',
-    '',
-    '- Config file: ' + BT + '~/.bugsnagrc' + BT + ' (JSON). Use ' + BT + 'config-path' + BT + ' to confirm.',
-    '- Auth is a Personal Auth Token sent as ' + BT + 'Authorization: token <token>' + BT + '.',
-    '  Tokens live at app.bugsnag.com/settings/my-account.',
-    '- Priority: CLI flags > env vars (' + BT + 'BUGSNAG_AUTH_TOKEN' + BT + ', ' + BT + 'BUGSNAG_BASE_URL' + BT + ',',
-    '  ' + BT + 'BUGSNAG_ORGANIZATION' + BT + ', ' + BT + 'BUGSNAG_PROJECT' + BT + ', ' + BT + 'BUGSNAG_PROFILE' + BT + ') > config file.',
-    '- ' + BT + 'config-show' + BT + ' masks secrets (first 4 + last 2 chars).',
-    '',
-    '## Pagination: Link Header + Limit',
-    '',
-    '- List endpoints paginate via the RFC-style ' + BT + 'Link: <...>; rel="next"' + BT + ' header;',
-    '  bugsnag-cli follows it automatically.',
-    '- Every list command supports ' + BT + '--per-page' + BT + ' (page size, default 30) and ' + BT + '--limit' + BT,
-    '  (cumulative fetch cap, default 100).',
-    '- Traversal stops when the next Link is absent or ' + BT + '--limit' + BT + ' results were collected.',
-    '- There is NO ' + BT + '--all' + BT + ' flag and no unbounded traversal.',
-    '',
-    '## Sorted Results Limit (API error code 60000)',
-    '',
-    '- Sorted endpoints cap how many sorted results the API can return. When the API',
-    '  responds with ' + BT + '{ errors: [...], code: 60000 }' + BT + ', bugsnag-cli transparently retries',
-    '  once with ' + BT + 'sort=unsorted' + BT + '.',
-    '- After a downgrade, rows may not arrive in ' + BT + 'last_seen' + BT + ' order; do not rely on',
-    '  ordering across that boundary, or add filters to narrow the window yourself.',
-    '',
-    '## Filter Syntax (strictly)',
-    '',
-    '- ' + BT + '--filter' + BT + ' is repeatable. Only these expression forms are supported:',
-    '  ' + BT + 'k=v' + BT + ' (eq), ' + BT + 'k=v1,v2' + BT + ' (one eq per value), ' + BT + 'k!=v' + BT + ' (ne),',
-    '  ' + BT + 'k:empty=true|false' + BT + ' (emptiness).',
-    '- They are serialized to ' + BT + 'filters[FIELD][][type]=...' + BT + ' and ' + BT + 'filters[FIELD][][value]=...' + BT,
-    '  query parameters.',
-    '- Time filters (' + BT + 'event.since' + BT + ', ' + BT + 'event.before' + BT + ') accept ISO 8601 UTC or relative',
-    '  times like ' + BT + '7d' + BT + ', and do not support ' + BT + 'ne' + BT + '.',
-    '- Discover valid field ids per project with ' + BT + 'event-fields --project <p>' + BT + ' (e.g.',
-    '  ' + BT + 'error.status' + BT + ', ' + BT + 'app.version' + BT + ', ' + BT + 'user.email' + BT + ').',
-    '',
-    '## latest_event Needs No Project',
-    '',
-    '- ' + BT + 'error-latest-event <errorId>' + BT + ' calls ' + BT + 'GET /errors/{error_id}/latest_event' + BT + ' --',
-    '  the path has no project id, so ' + BT + '--project' + BT + ' is not accepted or needed.',
-    '- All other project-scoped commands (' + BT + 'error-show' + BT + ', ' + BT + 'error-events' + BT + ',',
-    '  ' + BT + 'event-show' + BT + ', ' + BT + 'error-pivots' + BT + ', ' + BT + 'error-pivot-values' + BT + ', ' + BT + 'error-trend' + BT + ',',
-    '  ' + BT + 'event-fields' + BT + ') require ' + BT + '--project' + BT + ' or a default project from config.',
-    '',
-    '## Counts Reflect Filters',
-    '',
-    '- With filters applied, ' + BT + 'error-list' + BT + ' ' + BT + 'events' + BT + ' / ' + BT + 'users' + BT + ' counts are the',
-    '  filtered counts, not lifetime totals (' + BT + 'unthrottled_occurrence_count' + BT + ' is untouched).',
-    '- Some endpoints cap ' + BT + 'per_page' + BT + ' below 100 (events use max 30); the CLI sends',
-    '  per_page automatically and the API clamps it.',
-    '',
-    '## JSON Output Mode',
-    '',
-    '- Pass ' + BT + '--json' + BT + ' BEFORE the command name: ' + BT + 'bugsnag-cli --json error-list' + BT + '.',
-    '- In JSON mode, errors are ' + BT + '{ "isError": true, "error": "message" }' + BT + ' and the',
-    '  process exits with code 1. Check for ' + BT + 'isError' + BT + ' before parsing results.',
-    '- Shape downstream with jq: ' + BT + 'bugsnag-cli --json error-list | jq ...' + BT + '.',
-    '- Text mode truncates long strings (summary, message, event_class); use',
-    '  ' + BT + '--json' + BT + ' for complete objects.',
-    '',
-  ].join('\n');
+  return `# bugsnag-cli Pitfalls & Boundaries
+
+## Default Read-Only + Explicit Writes
+
+- The CLI is read-only by default. Only ${BT}error-update${BT} and ${BT}error-bulk-update${BT}
+  mutate BugSnag state, and both require ${BT}--write${BT}.
+- Without ${BT}--write${BT} the CLI exits 1 with a clear error.
+- Delete, create/link/unlink issue, and comment writes are not supported; use
+  the BugSnag dashboard.
+- ${BT}discard${BT} is not delete: it stops future events and can be reversed with
+  ${BT}undiscard${BT}.
+
+## Auth & Config
+
+- Config file: ${BT}~/.bugsnagrc${BT} (JSON). Use ${BT}config-path${BT} to confirm.
+- Auth is a Personal Auth Token sent as ${BT}Authorization: token <token>${BT}.
+- Priority: CLI flags > env vars (${BT}BUGSNAG_AUTH_TOKEN${BT}, ${BT}BUGSNAG_BASE_URL${BT},
+  ${BT}BUGSNAG_ORGANIZATION${BT}, ${BT}BUGSNAG_PROJECT${BT}, ${BT}BUGSNAG_PROFILE${BT}) > config file.
+- ${BT}config-show${BT} masks secrets (first 4 + last 2 chars).
+
+## Pagination: Link and Offset
+
+- Link-paginated: errors, events, error pivots, pivot values, releases, release groups.
+- Offset-paginated: span groups, span group summaries, starred span groups,
+  page load span groups, comments.
+- Every list command supports ${BT}--limit${BT} (default 100). Offset commands also
+  support ${BT}--offset${BT}. There is no ${BT}--all${BT} and no unbounded traversal.
+- ${BT}release-list${BT} caps ${BT}--per-page${BT} at 10.
+
+## Sorted Results Limit (API error code 60000)
+
+- Sorted endpoints cap how many sorted results they can return. On
+  ${BT}{ errors: [...], code: 60000 }${BT}, bugsnag-cli retries once with ${BT}sort=unsorted${BT}.
+- After a downgrade, ordering may change; narrow the window with filters.
+
+## Filter Syntax (strictly)
+
+- ${BT}--filter${BT} is repeatable. Only ${BT}k=v${BT}, ${BT}k=v1,v2${BT}, ${BT}k!=v${BT}, and
+  ${BT}k:empty=true|false${BT} are supported.
+- Serialized as ${BT}filters[FIELD][][type]=...${BT} and ${BT}filters[FIELD][][value]=...${BT}.
+- Performance endpoints accept the same event-style filters. The
+  ${BT}PerformanceFilter[]${BT} shape returns HTTP 400; do not use it.
+- Time filters such as ${BT}span.since${BT} and ${BT}event.since${BT} accept ISO 8601 UTC or
+  relative values like ${BT}7d${BT}; ${BT}ne${BT} is not supported on time filters.
+
+## Trend Path Drift
+
+- The live API accepts singular ${BT}/trend${BT} for error and project trends.
+- The plural ${BT}/trends${BT} path listed in the OpenAPI document returns HTTP 404.
+- ${BT}error-trend${BT} and ${BT}project-trend${BT} use the singular path.
+
+## Performance Plan Limits
+
+- ${BT}performance-overview${BT} returns HTTP 403 when the organization lacks the
+  ${BT}performance-scores${BT} plan feature.
+- ${BT}span-group-list${BT} may return an empty array even when healthy; verify the
+  project has performance data before concluding there are no spans.
+
+## latest_event Needs No Project
+
+- ${BT}error-latest-event <errorId>${BT} calls ${BT}GET /errors/{error_id}/latest_event${BT};
+  the path has no project id, so ${BT}--project${BT} is not accepted or needed.
+- All other error-scoped commands require ${BT}--project${BT} or a default project.
+
+## Counts Reflect Filters
+
+- With filters applied, ${BT}error-list${BT} ${BT}events${BT} / ${BT}users${BT} counts are filtered counts,
+  not lifetime totals (${BT}unthrottled_occurrence_count${BT} is untouched).
+- Some endpoints cap ${BT}per_page${BT} below 100 (events use max 30); the CLI sends
+  per_page automatically and the API clamps it.
+
+## JSON Output Mode
+
+- Pass ${BT}--json${BT} BEFORE the command name: ${BT}bugsnag-cli --json error-list${BT}.
+- In JSON mode, errors are ${BT}{ "isError": true, "error": "message" }${BT} and the
+  process exits with code 1. Check ${BT}isError${BT} before parsing results.
+- Shape downstream with jq: ${BT}bugsnag-cli --json error-list | jq ...${BT}.
+`;
 }

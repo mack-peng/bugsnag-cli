@@ -24,7 +24,10 @@ function stubFetch(responses: MockResponse[]): { calls: FetchCall[]; restore: ()
     const response = responses[calls.length - 1];
     if (!response)
       throw new Error('mock exhausted responses');
-    return new Response(typeof response.body === 'string' ? response.body : JSON.stringify(response.body ?? {}), {
+    const body = response.status === 204
+      ? null
+      : (typeof response.body === 'string' ? response.body : JSON.stringify(response.body ?? {}));
+    return new Response(body, {
       status: response.status,
       headers: response.headers || {},
     });
@@ -207,6 +210,16 @@ describe('BugsnagClient.request', () => {
       mock.restore();
     }
   });
+
+  it('returns null for 204 responses', async () => {
+    const mock = stubFetch([{ status: 204 }]);
+    try {
+      const result = await client.request('GET', '/projects/p/stability_trend');
+      assert.strictEqual(result, null);
+    } finally {
+      mock.restore();
+    }
+  });
 });
 
 describe('BugsnagClient.list', () => {
@@ -277,6 +290,62 @@ describe('BugsnagClient.list', () => {
       assert.match(url, /filters\[error\.status\]\[\]\[value\]=open/);
       assert.match(url, /filters\[user\.id\]\[\]\[type\]=empty/);
       assert.match(url, /filters\[user\.id\]\[\]\[value\]=false/);
+    } finally {
+      mock.restore();
+    }
+  });
+});
+
+describe('BugsnagClient.list offset pagination', () => {
+  it('increments offset and stops on a short page', async () => {
+    const mock = stubFetch([
+      { status: 200, body: [{ id: '1' }, { id: '2' }] },
+      { status: 200, body: [{ id: '3' }] },
+    ]);
+    try {
+      const result = await client.list('GET', '/projects/p/span_groups', {
+        queryParams: { per_page: 2 },
+        pagination: 'offset',
+      });
+      assert.deepStrictEqual(result.map(r => r.id), ['1', '2', '3']);
+      assert.strictEqual(mock.calls.length, 2);
+      assert.match(mock.calls[0].url, /offset=0/);
+      assert.match(mock.calls[1].url, /offset=2/);
+    } finally {
+      mock.restore();
+    }
+  });
+
+  it('stops at the limit without requesting another page', async () => {
+    const mock = stubFetch([
+      { status: 200, body: [{ id: '1' }, { id: '2' }] },
+      { status: 200, body: [{ id: '3' }, { id: '4' }] },
+    ]);
+    try {
+      const result = await client.list('GET', '/projects/p/span_groups', {
+        queryParams: { per_page: 2 },
+        pagination: 'offset',
+        limit: 3,
+      });
+      assert.deepStrictEqual(result.map(r => r.id), ['1', '2', '3']);
+      assert.strictEqual(mock.calls.length, 2);
+    } finally {
+      mock.restore();
+    }
+  });
+
+  it('stops on an empty page', async () => {
+    const mock = stubFetch([
+      { status: 200, body: [{ id: '1' }, { id: '2' }] },
+      { status: 200, body: [] },
+    ]);
+    try {
+      const result = await client.list('GET', '/projects/p/span_groups', {
+        queryParams: { per_page: 2 },
+        pagination: 'offset',
+      });
+      assert.deepStrictEqual(result.map(r => r.id), ['1', '2']);
+      assert.strictEqual(mock.calls.length, 2);
     } finally {
       mock.restore();
     }

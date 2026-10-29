@@ -12,11 +12,11 @@ If a human pasted this to you, follow the instructions below:
 
 ## What You're Installing
 
-`bugsnag-cli` is a read-only CLI that lets you (the agent) fetch errors, error details, events with full stack traces, pivots and trends from the BugSnag API — the data you need for root-cause analysis, straight from the command line.
+`bugsnag-cli` is a read-only-by-default CLI that lets you (the agent) fetch errors, events with full stack traces, project health, releases, comments, and performance data from the BugSnag API — the data you need for root-cause analysis, straight from the command line.
 
 Humans should not type these commands. You should.
 
-The CLI is read-only by design: it cannot discard, resolve, or delete anything in BugSnag. Mutating actions happen in the Dashboard.
+The CLI cannot delete, resolve, or discard anything unless you explicitly pass `--write`. Only `error-update` and `error-bulk-update` mutate BugSnag state; all other commands are read-only. Delete, issue linking, and comment writes stay in the Dashboard.
 
 ---
 
@@ -223,4 +223,4 @@ export BUGSNAG_PROJECT=my-app
 
 ## Done
 
-You now have read access to one or more BugSnag accounts from any terminal. Keep the read-only boundary: this CLI cannot change BugSnag state — send humans to the Dashboard for that.
+You now have access to one or more BugSnag accounts from any terminal. The CLI is read-only by default; only run `error-update` / `error-bulk-update` with `--write` when a human explicitly asks for triage. Delete, issue linking, and comment writes stay in the Dashboard.

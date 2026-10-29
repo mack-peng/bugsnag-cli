@@ -7,6 +7,9 @@ export type Category =
   | 'errors'
   | 'events'
   | 'analysis'
+  | 'releases'
+  | 'performance'
+  | 'comments'
   | 'config';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -36,6 +39,9 @@ export type CommandSchema<Args extends zodType.ZodTypeAny, Options extends zodTy
   hidden?: boolean;
   raw?: boolean;
   list?: boolean;
+  mutating?: boolean;
+  pagination?: 'link' | 'offset';
+  perPage?: { default: number; max?: number };
   upload?: boolean;
   jsonFile?: boolean;
   /**
@@ -62,6 +68,11 @@ export function declareCommand<Args extends zodType.ZodTypeAny, Options extends 
   command: CommandSchema<Args, Options>
 ): CommandSchema<Args, Options> {
   return command;
+}
+
+export function assertWriteAllowed(command: AnyCommandSchema, write: boolean): void {
+  if (command.mutating && !write)
+    throw new Error(`${command.name} mutates BugSnag data; re-run with --write`);
 }
 
 const kEmptyOptions = z.object({});

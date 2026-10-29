@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { minimist } from './minimist';
-import { parseCommand } from './command';
+import { parseCommand, assertWriteAllowed } from './command';
 import { commands } from './commands';
 import { TextOutput, JsonOutput } from './output';
 import { loadConfig, maskConfig, writeRcConfig, rcFilePath, getRcConfig, setActiveProfile, createProfile } from '../config/config';
@@ -18,9 +18,9 @@ import type { MinimistArgs } from './minimist';
 import type { AnyCommandSchema, HelpData, HelpEntry } from './command';
 import type { Config } from '../config/config';
 
-const globalOptions = ['json', 'raw', 'help', 'h', 'version', 'v', 'p', 'profile', 'auth-token', 'base-url'];
-const booleanGlobalOptions = ['help', 'json', 'raw', 'version', 'v', 'h'];
-const queryExcludedFlags = ['filter', 'per-page', 'limit', 'project', 'organization', 'full-reports', 'summary-size', 'buckets-count', 'pivots'];
+const globalOptions = ['json', 'raw', 'help', 'h', 'version', 'v', 'p', 'profile', 'auth-token', 'base-url', 'write'];
+const booleanGlobalOptions = ['help', 'json', 'raw', 'version', 'v', 'h', 'write'];
+const queryExcludedFlags = ['filter', 'per-page', 'limit', 'project', 'organization', 'full-reports', 'summary-size', 'buckets-count', 'pivots', 'offset', 'error-ids', 'starred-only', 'release-stage', 'release-stage-name', 'top-only', 'visible-only', 'target-span-id', 'categories'];
 const listPerPageDefaults: Record<string, number> = { 'event-fields': 100 };
 
 const textViewTransforms: Record<string, (data: any) => any> = {
@@ -29,6 +29,22 @@ const textViewTransforms: Record<string, (data: any) => any> = {
   'error-list': errorListRows,
   'error-events': eventListRows,
   'event-show': eventDetailView,
+  'event-list': eventListRows,
+  'project-pivots': projectPivotRows,
+  'project-pivot-values': projectPivotValueRows,
+  'project-trend': trendRows,
+  'project-stability': stabilityRows,
+  'saved-search-list': savedSearchRows,
+  'release-list': releaseRows,
+  'release-group-list': releaseGroupRows,
+  'comment-list': commentRows,
+  'error-update': errorUpdateRows,
+  'error-bulk-update': errorBulkUpdateRows,
+  'span-group-list': spanGroupRows,
+  'page-load-span-group-list': pageLoadSpanGroupRows,
+  'starred-span-group-list': starredSpanGroupRows,
+  'trace-fields': traceFieldRows,
+  'performance-overview': performanceOverviewRows,
 };
 function orgListRows(orgs: any[]): any[] {
   return orgs.map((org) => ({ id: org.id, name: org.name }));
@@ -109,6 +125,160 @@ function truncateText(value: any, max: number): string {
     return '';
   const text = String(value);
   return text.length > max ? text.slice(0, max - 3) + '...' : text;
+}
+
+function projectPivotRows(pivots: any[]): any[] {
+  return (pivots || []).map((pivot) => ({
+    field: pivot.event_field_display_id,
+    name: pivot.name,
+    cardinality: pivot.cardinality,
+    top_values: (pivot.list || []).slice(0, 5).map((item: any) => `${item.value} (${item.events})`).join(', '),
+  }));
+}
+
+function projectPivotValueRows(values: any[]): any[] {
+  return (values || []).map((value) => ({
+    value: value.event_field_value,
+    events: value.events,
+    proportion: value.proportion,
+    first_seen: value.first_seen,
+    last_seen: value.last_seen,
+  }));
+}
+
+function trendRows(points: any[]): any[] {
+  return (points || []).map((point) => ({
+    from: point.from,
+    to: point.to,
+    events: point.events_count,
+  }));
+}
+
+function stabilityRows(data: any): any[] {
+  return (data?.timeline_points || []).map((point: any) => ({
+    bucket_start: point.bucket_start,
+    total_sessions: point.total_sessions_count,
+    unhandled_sessions: point.unhandled_sessions_count,
+    users_seen: point.users_seen,
+    users_with_unhandled: point.users_with_unhandled,
+  }));
+}
+
+function savedSearchRows(searches: any[]): any[] {
+  return (searches || []).map((search) => ({
+    id: search.id,
+    name: search.name,
+    shared: search.shared,
+    project_default: search.project_default,
+    created_at: search.created_at,
+    updated_at: search.updated_at,
+  }));
+}
+
+function releaseRows(releases: any[]): any[] {
+  return (releases || []).map((release) => ({
+    id: release.id,
+    app_version: truncateText(release.app_version, 60),
+    release_stage: truncateText(release.release_stage?.name ?? release.release_stage, 30),
+    release_time: release.release_time,
+    errors_introduced: release.errors_introduced_count,
+    errors_seen: release.errors_seen_count,
+  }));
+}
+
+function releaseGroupRows(groups: any[]): any[] {
+  return (groups || []).map((group) => ({
+    id: group.id,
+    app_version: group.app_version,
+    release_stage: group.release_stage_name,
+    first_released_at: group.first_released_at,
+    releases: group.releases_count,
+    secondary_versions: group.has_secondary_versions,
+  }));
+}
+
+function commentRows(comments: any[]): any[] {
+  return (comments || []).map((comment) => ({
+    id: comment.id,
+    created_at: comment.created_at,
+    collaborator: comment.collaborator?.name ?? '',
+    email: maskEmail(comment.collaborator?.email),
+    message: truncateText(comment.message, 80),
+  }));
+}
+
+function errorUpdateRows(data: any): string {
+  if (!data)
+    return '(no result)';
+  return `updated ${data.id}: status=${data.status ?? ''}, discarded=${data.discarded ?? ''}, assigned=${data.assigned_collaborator_id || 'none'}`;
+}
+
+function errorBulkUpdateRows(data: any): any {
+  if (!data || typeof data !== 'object')
+    return data;
+  return Object.entries(data).map(([id, value]: [string, any]) => ({
+    id,
+    status: value.status,
+    discarded: value.discarded,
+    assigned: value.assigned_collaborator_id || 'none',
+  }));
+}
+
+function spanGroupRows(groups: any[]): any[] {
+  return (groups || []).map((group) => ({
+    id: group.id,
+    category: group.category,
+    display_name: group.display_name,
+    total_spans: group.statistics?.total_spans,
+    p50: group.statistics?.duration_statistics?.p50,
+    p95: group.statistics?.duration_statistics?.p95,
+    p99: group.statistics?.duration_statistics?.p99,
+    last_seen: group.statistics?.last_seen,
+  }));
+}
+
+function pageLoadSpanGroupRows(groups: any[]): any[] {
+  return (groups || []).map((group) => ({
+    id: group.id,
+    name: group.name,
+    display_name: group.display_name,
+    total_spans: group.statistics?.total_spans,
+    last_seen: group.statistics?.last_seen,
+  }));
+}
+
+function starredSpanGroupRows(groups: any[]): any[] {
+  return (groups || []).map((group) => ({
+    id: group.id,
+    name: group.name,
+    display_name: group.display_name,
+  }));
+}
+
+function traceFieldRows(fields: any[]): any[] {
+  return (fields || []).map((field) => ({
+    display_id: field.display_id,
+    name: field.filter_options?.name,
+    custom: field.custom,
+    field_type: field.field_type,
+  }));
+}
+
+function performanceOverviewRows(data: any): any {
+  if (!data)
+    return '(no result)';
+  return {
+    performance_score: data.performance_score,
+    span_count: data.span_count,
+    timeline_points: data.performance_score_timeline?.length ?? 0,
+  };
+}
+
+function maskEmail(value: any): string {
+  if (typeof value !== 'string' || !value.includes('@'))
+    return '';
+  const [local, domain] = value.split('@');
+  return `${local.slice(0, 1)}***@${domain}`;
 }
 
 export async function program() {
@@ -304,6 +474,8 @@ async function executeApiCommand(
     const cmdArgs = splitArgs(args);
     const parsed = parseCommand(command, cmdArgs as Record<string, string> & { _: string[] });
 
+    assertWriteAllowed(command, Boolean(args.write));
+
     await injectContext(command, parsed, config, client);
 
     const pathStr = typeof command.api.path === 'function'
@@ -359,16 +531,31 @@ async function dispatchRequest(
   const transformed = command.transformRequest ? command.transformRequest(parsed) : parsed;
 
   if (command.list) {
-    const perPage = parsed['per-page'] !== undefined ? parsed['per-page'] : listPerPageDefaults[command.name] ?? 30;
+    const perPage = parsed['per-page'] !== undefined
+      ? parsed['per-page']
+      : command.perPage?.default ?? listPerPageDefaults[command.name] ?? 30;
+    if (command.perPage?.max && perPage > command.perPage.max)
+      throw new Error(`--per-page must be <= ${command.perPage.max}`);
     const limit = parsed.limit !== undefined ? parsed.limit : 100;
-    const queryParams = { ...queryFlags, ...filterQueryParams(transformed), per_page: perPage };
-    return client.list('GET', pathStr, { queryParams, filterParams: filterParamsFor(parsed), limit });
+    const queryParams = {
+      ...queryFlags,
+      ...filterQueryParams(transformed),
+      per_page: perPage,
+      ...(command.pagination !== 'offset' && parsed.offset !== undefined ? { offset: parsed.offset } : {}),
+    };
+    return client.list('GET', pathStr, {
+      queryParams,
+      filterParams: filterParamsFor(parsed),
+      limit,
+      pagination: command.pagination ?? 'link',
+      offset: parsed.offset ?? 0,
+    });
   }
 
   const method = command.api.method;
   const isBodyMethod = method !== 'GET' && method !== 'DELETE';
   const queryParams = isBodyMethod
-    ? queryFlags
+    ? {}
     : { ...queryFlags, ...filterQueryParams(transformed) };
   const apiOptions: Record<string, any> = { queryParams };
   if (isBodyMethod)
@@ -409,7 +596,7 @@ function extractQueryFlags(args: MinimistArgs, cmdEntry: HelpEntry, excludeFromQ
 function filterQueryParams(obj: Record<string, any>): Record<string, any> {
   const result: Record<string, any> = {};
   for (const [key, value] of Object.entries(obj)) {
-    if (value !== undefined && value !== null && typeof value !== 'object')
+    if (value !== undefined && value !== null && (typeof value !== 'object' || Array.isArray(value)))
       result[key] = value;
   }
   return result;

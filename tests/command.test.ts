@@ -1,7 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import * as z from 'zod';
-import { declareCommand, parseCommand } from '../src/cli/command';
+import { declareCommand, parseCommand, assertWriteAllowed } from '../src/cli/command';
+import { commands } from '../src/cli/commands';
 
 const numberArg = z.preprocess((val, ctx) => {
   const n = Number(val);
@@ -104,6 +105,118 @@ describe('command', () => {
         api: { method: 'GET', path: '/items' },
       });
       assert.throws(() => parseCommand(cmd, { _: ['list'], limit: 'abc' }), /expected number/);
+    });
+  });
+
+  describe('assertWriteAllowed', () => {
+    it('allows read-only commands without --write', () => {
+      const cmd = declareCommand({
+        name: 'read',
+        category: 'errors',
+        description: 'read',
+        api: { method: 'GET', path: '/read' },
+      });
+      assert.doesNotThrow(() => assertWriteAllowed(cmd, false));
+    });
+
+    it('rejects mutating commands without --write', () => {
+      const cmd = declareCommand({
+        name: 'write',
+        category: 'errors',
+        description: 'write',
+        mutating: true,
+        api: { method: 'PATCH', path: '/write' },
+      });
+      assert.throws(() => assertWriteAllowed(cmd, false), /re-run with --write/);
+    });
+
+    it('allows mutating commands with --write', () => {
+      const cmd = declareCommand({
+        name: 'write',
+        category: 'errors',
+        description: 'write',
+        mutating: true,
+        api: { method: 'PATCH', path: '/write' },
+      });
+      assert.doesNotThrow(() => assertWriteAllowed(cmd, true));
+    });
+  });
+
+  describe('command transforms', () => {
+    it('rejects trend buckets-count with resolution', () => {
+      const transform = commands['project-trend'].transformRequest!;
+      assert.throws(
+        () => transform({ projectId: 'p', 'buckets-count': 10, resolution: '5m' }),
+        /mutually exclusive/
+      );
+    });
+
+    it('rejects buckets-count outside 1..50', () => {
+      const transform = commands['project-trend'].transformRequest!;
+      assert.throws(
+        () => transform({ projectId: 'p', 'buckets-count': 60 }),
+        /between 1 and 50/
+      );
+      assert.throws(
+        () => transform({ projectId: 'p', 'buckets-count': 0 }),
+        /between 1 and 50/
+      );
+    });
+
+    it('requires severity for override_severity', () => {
+      const transform = commands['error-update'].transformRequest!;
+      assert.throws(
+        () => transform({ projectId: 'p', errorId: 'e', operation: 'override_severity' }),
+        /--severity is required/
+      );
+    });
+
+    it('requires an assignment target for assign', () => {
+      const transform = commands['error-update'].transformRequest!;
+      assert.throws(
+        () => transform({ projectId: 'p', errorId: 'e', operation: 'assign' }),
+        /assign requires/
+      );
+    });
+
+    it('builds an assign body', () => {
+      const transform = commands['error-update'].transformRequest!;
+      assert.deepStrictEqual(
+        transform({ projectId: 'p', errorId: 'e', operation: 'assign', 'assigned-collaborator-id': 'u1' }),
+        { operation: 'assign', assigned_collaborator_id: 'u1' }
+      );
+    });
+
+    it('builds a snooze body', () => {
+      const transform = commands['error-update'].transformRequest!;
+      assert.deepStrictEqual(
+        transform({ projectId: 'p', errorId: 'e', operation: 'snooze', 'reopen-if': 'occurs_after', seconds: 3600 }),
+        { operation: 'snooze', reopen_rules: { reopen_if: 'occurs_after', seconds: 3600 } }
+      );
+    });
+
+    it('builds a bulk update path with repeated error_ids', () => {
+      const path = commands['error-bulk-update'].api.path as (args: any) => string;
+      assert.strictEqual(
+        path({ projectId: 'p', 'error-ids': 'a,b' }),
+        '/projects/p/errors?error_ids=a&error_ids=b'
+      );
+    });
+
+    it('serializes pivots as a bracketed array', () => {
+      const transform = commands['project-pivots'].transformRequest!;
+      assert.deepStrictEqual(
+        transform({ projectId: 'p', pivots: 'a,b' }),
+        { 'pivots[]': ['a', 'b'] }
+      );
+    });
+
+    it('serializes categories as a bracketed array', () => {
+      const transform = commands['starred-span-group-list'].transformRequest!;
+      assert.deepStrictEqual(
+        transform({ projectId: 'p', categories: 'app_start,network' }),
+        { 'categories[]': ['app_start', 'network'] }
+      );
     });
   });
 });

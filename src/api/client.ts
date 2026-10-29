@@ -17,10 +17,13 @@ export interface ListOptions {
   filterParams?: FilterParam[];
   limit?: number;
   timeout?: number;
+  pagination?: 'link' | 'offset';
+  offset?: number;
 }
 
-const DEFAULT_TIMEOUT = 30000;
-const DEFAULT_LIMIT = 100;
+export const DEFAULT_TIMEOUT = 30000;
+export const DEFAULT_LIMIT = 100;
+export const DEFAULT_PER_PAGE = 30;
 
 const SORTED_RESULTS_CODE = 60000;
 
@@ -74,6 +77,9 @@ export class BugsnagClient {
         return this.request(method, path, options);
       }
 
+      if (response.status === 204)
+        return null;
+
       const json: any = await response.json().catch(() => ({}));
 
       if (sortedResultsLimited(json) && canDowngradeToUnsorted(options)) {
@@ -96,8 +102,28 @@ export class BugsnagClient {
   async list(method: string, path: string, options: ListOptions = {}): Promise<any[]> {
     const results: any[] = [];
     const limit = options.limit ?? DEFAULT_LIMIT;
-    let nextPath: string | null = null;
 
+    if (options.pagination === 'offset') {
+      const rawPerPage = Number(options.queryParams?.per_page ?? DEFAULT_PER_PAGE);
+      const perPage = Number.isInteger(rawPerPage) && rawPerPage > 0 ? rawPerPage : DEFAULT_PER_PAGE;
+      let offset = options.offset ?? 0;
+      while (results.length < limit) {
+        const page = await this.request(method, path, {
+          ...options,
+          queryParams: { ...options.queryParams, offset, per_page: perPage },
+        });
+        const rows = Array.isArray(page) ? page : extractPageRows(page);
+        if (!rows.length)
+          break;
+        results.push(...rows.slice(0, limit - results.length));
+        if (rows.length < perPage || results.length >= limit)
+          break;
+        offset += rows.length;
+      }
+      return results;
+    }
+
+    let nextPath: string | null = null;
     do {
       const page = nextPath
         ? await this.request(method, nextPath)

@@ -44,6 +44,9 @@ function generateCommandHelp(command: AnyCommandSchema) {
     }
   }
 
+  if (command.mutating)
+    lines.push(formatWithGap('  --write', 'allow this mutating command'));
+
   if (command.category !== 'config') {
     lines.push('');
     lines.push('Global options:');
@@ -62,6 +65,9 @@ const categories: { name: Category; title: string }[] = [
   { name: 'errors', title: 'Errors (Issue Tracking)' },
   { name: 'events', title: 'Events' },
   { name: 'analysis', title: 'Pivots & Trends (AI Analysis)' },
+  { name: 'releases', title: 'Releases' },
+  { name: 'performance', title: 'Performance' },
+  { name: 'comments', title: 'Comments' },
   { name: 'config', title: 'Configuration' },
 ];
 
@@ -91,6 +97,7 @@ export function generateHelp() {
   lines.push(formatWithGap('  --json', 'output response as JSON'));
   lines.push(formatWithGap('  --raw', 'output only the result value'));
   lines.push(formatWithGap('  --version', 'print version'));
+  lines.push(formatWithGap('  --write', 'allow mutating commands'));
   lines.push(formatWithGap('  -p, --profile <name>', 'use named profile (or BUGSNAG_PROFILE env)'));
   lines.push(formatWithGap('  --auth-token <token>', 'bugsnag personal auth token'));
   lines.push(formatWithGap('  --base-url <url>', 'bugsnag api base url'));

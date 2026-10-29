@@ -14,6 +14,7 @@ Verified against `https://api.bugsnag.com` on 2026-10-29:
 
 - Error and project trends use the singular path `/trend`. The plural `/trends` path listed in the OpenAPI document returns HTTP 404.
 - Performance endpoints accept event-style filters (`filters[field][][type]` + `filters[field][][value]`). The `PerformanceFilter[]` shape (`filters[0][key]` + `filter_values`) returns HTTP 400.
+- `starred_span_groups` uses `page_token` pagination; sending `offset=0` returns HTTP 400 `the supplied page token is invalid`. The CLI uses Link pagination for this command.
 - `GET /projects/{project_id}/performance_overview` returns HTTP 403 when the organization's plan lacks the `performance-scores` feature.
 - `span_groups` may return an empty array even when the endpoint is healthy; verification depends on project data and plan features.
 

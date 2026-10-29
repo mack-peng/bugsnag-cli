@@ -216,12 +216,14 @@ function errorUpdateRows(data: any): string {
 function errorBulkUpdateRows(data: any): any {
   if (!data || typeof data !== 'object')
     return data;
-  return Object.entries(data).map(([id, value]: [string, any]) => ({
-    id,
-    status: value.status,
-    discarded: value.discarded,
-    assigned: value.assigned_collaborator_id || 'none',
-  }));
+  return Object.entries(data)
+    .filter(([, value]) => value !== null && typeof value === 'object')
+    .map(([id, value]: [string, any]) => ({
+      id,
+      status: value.status,
+      discarded: value.discarded,
+      assigned: value.assigned_collaborator_id || 'none',
+    }));
 }
 
 function spanGroupRows(groups: any[]): any[] {

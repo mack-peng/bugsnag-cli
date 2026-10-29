@@ -934,12 +934,10 @@ const starredSpanGroupList = declareCommand({
     project: z.string().optional().describe('project id or name (or default project)'),
     categories: z.string().optional().describe('comma-separated categories: app_start,view_load,network,page_load,route_change,full_page_load,navigation,custom'),
     'per-page': numberArg.optional().describe('results per page (default 30)'),
-    offset: numberArg.optional().describe('pagination offset (default 0)'),
     limit: numberArg.optional().describe('cumulative fetch limit (default 100)'),
   }),
   project: 'id',
   list: true,
-  pagination: 'offset',
   api: {
     method: 'GET',
     path: ({ projectId }) => {

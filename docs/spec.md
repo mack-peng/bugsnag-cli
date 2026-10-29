@@ -29,7 +29,7 @@
 ### 分页
 
 - **Link 分页**：响应头 `Link: <...>; rel="next"` + `X-Total-Count`。用于 errors、events、error pivots、pivot values、releases、release groups。
-- **Offset 分页**：`offset` + `per_page`。用于 span groups、span group summaries、starred span groups、page load span groups、comments。
+- **Offset 分页**：`offset` + `per_page`。用于 span groups、span group summaries、page load span groups、comments。`starred-span-group-list` 的 live API 使用 `page_token`，CLI 走 Link 分页。
 - 所有 list 命令支持 `--limit`（默认 100）；offset 命令额外支持 `--offset`（默认 0）。
 - 某页返回条数小于 `per_page` 或累计达到 `--limit` 时停止。
 

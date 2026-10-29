@@ -147,7 +147,8 @@ formatting. In ${BT}--json${BT} mode, errors are ${BT}{ "isError": true, "error"
 ## Pagination: Link and Offset
 
 - Event, error, pivot-value, release, and release-group lists use ${BT}Link: rel="next"${BT}.
-- Span groups, page loads, starred span groups, and comments use ${BT}offset${BT} + ${BT}per_page${BT}.
+- Span groups, page loads, and comments use ${BT}offset${BT} + ${BT}per_page${BT}.
+- Starred span groups use ${BT}page_token${BT}/Link pagination in the live API.
 - Both modes respect ${BT}--limit${BT} (default 100). There is no ${BT}--all${BT}; traversal is bounded by design.
 - ${BT}release-list${BT} caps ${BT}--per-page${BT} at 10.
 
@@ -202,8 +203,8 @@ export function buildPitfallsMd(): string {
 ## Pagination: Link and Offset
 
 - Link-paginated: errors, events, error pivots, pivot values, releases, release groups.
-- Offset-paginated: span groups, span group summaries, starred span groups,
-  page load span groups, comments.
+- Offset-paginated: span groups, span group summaries, page load span groups,
+  comments. Starred span groups use page_token/Link pagination.
 - Every list command supports ${BT}--limit${BT} (default 100). Offset commands also
   support ${BT}--offset${BT}. There is no ${BT}--all${BT} and no unbounded traversal.
 - ${BT}release-list${BT} caps ${BT}--per-page${BT} at 10.

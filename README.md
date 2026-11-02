@@ -248,7 +248,7 @@ Full filter notes: [Installation Guide → Filters](docs/guide/installation.md#f
 - **Offset pagination**: span groups, page loads, comments.
 - **Page-token / Link**: starred span groups.
 
-Every list command supports `--limit` (default 100); offset commands also support `--offset`. There is no `--all` and no unbounded traversal. `release-list` caps `--per-page` at 10.
+Paginated commands take `--limit` (default 100); offset commands also support `--offset`. Commands backed by a single unpaginated response (`saved-search-list`, `project-pivots`) return the full result set and do not take `--limit`. There is no `--all` and no unbounded traversal. `release-list` caps `--per-page` at 10.
 Full pagination notes: [Installation Guide → Pagination](docs/guide/installation.md#pagination-never-unbounded).
 
 ---
@@ -364,9 +364,9 @@ Live drift recorded there: trends use singular `/trend`; performance endpoints a
 |-------------|-------|
 | Node.js | >= 18 |
 | npm | any version bundled with Node.js >= 18 |
-| Platforms | macOS, Linux, Windows (x64 / arm64) |
+| Platforms | macOS, Linux, Windows (x64 / arm64); pure JavaScript, no native dependencies |
 
-`npx bugsnag-cli` works without a global install.
+`npx bugsnag-cli` works without a global install. The test suite runs on Linux CI; macOS and Windows are supported by Node.js but are not covered by CI.
 
 ---
 

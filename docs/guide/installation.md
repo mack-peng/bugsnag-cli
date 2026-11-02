@@ -44,9 +44,9 @@ The CLI cannot delete, resolve, or discard anything unless you explicitly pass `
 |-------------|-------|
 | Node.js | >= 18 |
 | npm | bundled with Node.js >= 18 |
-| Platforms | macOS, Linux, Windows (x64 / arm64) |
+| Platforms | macOS, Linux, Windows (x64 / arm64); pure JavaScript, no native dependencies |
 
-`npx bugsnag-cli` works without a global install.
+`npx bugsnag-cli` works without a global install. The test suite runs on Linux CI; macOS and Windows are supported by Node.js but are not covered by CI.
 
 ---
 
@@ -327,13 +327,13 @@ export BUGSNAG_PROJECT=my-app
 → The organization's plan lacks the `performance-scores` feature. Use `span-group-list` / `trace-spans` instead.
 
 **"60000" / sorted results unavailable**
-→ The API rejected the requested sort. The CLI retries once with `sort=unsorted`; if it still fails, pass `--sort unsorted` explicitly.
+→ The API rejected the requested sort. When the command has a `sort` parameter, the CLI retries once with `sort=unsorted`; commands without a sort parameter return the 60000 payload — pass `--sort unsorted` where the command supports it.
 
 **`--resolution` rejected**
 → Allowed values: `1m`, `5m`, `30m`, `2h`, `12h`.
 
-**`skill-install` writes nothing / target not detected**
-→ Pass an explicit target (`--target opencode`, `--target claude`, …), use `--target all`, or install locally with `--local`.
+**`skill-install` picked an unexpected agent**
+→ `--target auto` falls back to `claude` when no agent is detected. Pass an explicit target (`--target opencode`, `--target claude`, …), use `--target all`, or install locally with `--local`.
 
 **Permission denied on a skill directory**
 → Use `--local` to install into the current project instead of the home directory.

@@ -59,18 +59,28 @@ function resolveProfileName(args: MinimistArgs): string {
   return readRcFile().active;
 }
 
-function resolveProfile(args: MinimistArgs): ProfileConfig {
+function resolveProfile(args: MinimistArgs): ProfileConfig | undefined {
   const name = resolveProfileName(args);
   const rc = readRcFile();
-  const profile = rc.profiles[name];
-  if (!profile)
-    throw new Error(`Profile '${name}' not found. Run: bugsnag-cli config-new ${name}`);
-  return profile;
+  return rc.profiles[name];
 }
 
-export function loadConfig(args: MinimistArgs): Config {
+function hasExplicitProfile(args: MinimistArgs): boolean {
+  return Boolean(args.p || args.profile || process.env.BUGSNAG_PROFILE);
+}
+
+export interface LoadConfigOptions {
+  requireAuth?: boolean;
+}
+
+export function loadConfig(args: MinimistArgs, options: LoadConfigOptions = {}): Config {
   const profile = resolveProfile(args);
-  const profileTyped = profile as unknown as Record<string, string>;
+  if (!profile && hasExplicitProfile(args)) {
+    const name = resolveProfileName(args);
+    throw new Error(`Profile '${name}' not found. Run: bugsnag-cli config-new ${name}`);
+  }
+  const resolvedProfile = profile ?? { 'auth-token': '', 'base-url': DEFAULT_BASE_URL };
+  const profileTyped = resolvedProfile as unknown as Record<string, string>;
 
   const authToken = (args['auth-token'] as string) || process.env.BUGSNAG_AUTH_TOKEN
     || profileTyped['auth-token'] || profileTyped.authToken || profileTyped['auth_token'];
@@ -81,13 +91,14 @@ export function loadConfig(args: MinimistArgs): Config {
   const project = (args.project as string) || process.env.BUGSNAG_PROJECT
     || profileTyped.project;
 
-  if (!authToken)
+  const requireAuth = options.requireAuth ?? true;
+  if (requireAuth && !authToken)
     throw new Error(
       'Missing required config. Set BUGSNAG_AUTH_TOKEN env var, or use --auth-token flag, or run: bugsnag-cli config-set auth-token <value>'
     );
 
   return {
-    'auth-token': authToken as string,
+    'auth-token': (authToken as string) || '',
     'base-url': baseUrl as string,
     organization,
     project,

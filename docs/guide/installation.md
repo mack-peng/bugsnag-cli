@@ -59,7 +59,7 @@ npm install -g bugsnag-cli
 Or run without installing (slower but zero setup):
 
 ```bash
-npx bugsnag-cli org-list
+npx bugsnag-cli --version
 ```
 
 Verify:
@@ -182,7 +182,7 @@ bugsnag-cli org-list
 bugsnag-cli error-list --project my-app --sort events --filter "error.status=open" --filter "event.since=1d" --limit 10
 ```
 
-JSON output = it works. `Error: Bad Credentials` = bad token. `Missing required config` = auth-token not set.
+A table of organizations = it works. Add `--json` for machine-readable output. `Error: Bad Credentials` = bad token. `Missing required config` = auth-token not set.
 
 ---
 

@@ -377,7 +377,7 @@ function handleConfigCommands(
           }));
           return true;
         }
-        const { config } = setupClient(args);
+        const config = loadConfig(args, { requireAuth: false });
         console.log(output.format(maskConfig(config)));
         return true;
       }

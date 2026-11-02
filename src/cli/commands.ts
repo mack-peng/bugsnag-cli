@@ -317,8 +317,11 @@ const errorPivotValues = declareCommand({
     sort: z.enum(['unsorted']).optional().describe("set to 'unsorted' after a 60000 sorted-limit response"),
     base: z.string().optional().describe('only events occurring before this time'),
     filter: stringArrayArg.optional().describe('filter expression, repeatable: k=v, k!=v, k:empty=true|false'),
+    'per-page': numberArg.optional().describe('results per page (default 30)'),
+    limit: numberArg.optional().describe('cumulative fetch limit (default 100)'),
   }),
   project: 'id',
+  list: true,
   api: {
     method: 'GET',
     path: ({ projectId, errorId, fieldId }) => {

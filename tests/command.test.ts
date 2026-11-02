@@ -218,5 +218,17 @@ describe('command', () => {
         { 'categories[]': ['app_start', 'network'] }
       );
     });
+
+    it('paginates error pivot values with per-page and limit', () => {
+      const cmd = commands['error-pivot-values'];
+      assert.strictEqual(cmd.list, true);
+      const parsed = parseCommand(cmd, {
+        _: ['error-pivot-values', 'err', 'app.release_stage'],
+        'per-page': '30',
+        limit: '100',
+      });
+      assert.strictEqual(parsed['per-page'], 30);
+      assert.strictEqual(parsed.limit, 100);
+    });
   });
 });

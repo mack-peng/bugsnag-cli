@@ -6,7 +6,25 @@ You are an AI agent (opencode, Claude Code, Codex, Cursor, etc.). This guide is 
 
 If a human pasted this to you, follow the instructions below:
 
-> Install and configure `bugsnag-cli` using the guide at `docs/guide/installation.md`. First check `~/.bugsnagrc` if it exists, then ask me for my BugSnag Personal Auth Token. Verify with `bugsnag-cli org-list`.
+> Install and configure `bugsnag-cli` by following the instructions here:
+> https://raw.githubusercontent.com/mack-peng/bugsnag-cli/main/docs/guide/installation.md
+
+---
+
+## For LLM Agents
+
+Fetch this guide and follow it:
+
+```bash
+curl -s https://raw.githubusercontent.com/mack-peng/bugsnag-cli/main/docs/guide/installation.md
+```
+
+Or install directly:
+
+```bash
+npm install -g bugsnag-cli
+bugsnag-cli skill-install
+```
 
 ---
 
@@ -17,6 +35,18 @@ If a human pasted this to you, follow the instructions below:
 Humans should not type these commands. You should.
 
 The CLI cannot delete, resolve, or discard anything unless you explicitly pass `--write`. Only `error-update` and `error-bulk-update` mutate BugSnag state; all other commands are read-only. Delete, issue linking, and comment writes stay in the Dashboard.
+
+---
+
+## Requirements
+
+| Requirement | Value |
+|-------------|-------|
+| Node.js | >= 18 |
+| npm | bundled with Node.js >= 18 |
+| Platforms | macOS, Linux, Windows (x64 / arm64) |
+
+`npx bugsnag-cli` works without a global install.
 
 ---
 
@@ -46,7 +76,49 @@ export PATH="$(npm root -g)/../bin:$PATH"
 
 ---
 
-## Step 2: Check Existing Config
+## Step 2: Install the Agent Skill
+
+The skill teaches you the command surface, auth flow, and common failure modes without re-reading this guide:
+
+```bash
+bugsnag-cli skill-install
+```
+
+`skill-install` writes `SKILL.md` + `references/pitfalls.md` into each detected agent's skill directory.
+
+| Target | Skill directory |
+|--------|-----------------|
+| `claude` | `~/.claude/skills/bugsnag-cli/` |
+| `opencode` | `~/.agents/skills/bugsnag-cli/` |
+| `cursor` | `~/.agents/skills/bugsnag-cli/` |
+| `codex` | `~/.codex/skills/bugsnag-cli/` |
+| `hermes` | `~/.hermes/skills/bugsnag-cli/` |
+| `gemini` | `~/.gemini/skills/bugsnag-cli/` |
+
+Options:
+
+```bash
+bugsnag-cli skill-install --target opencode   # explicit target
+bugsnag-cli skill-install --target all        # every known target
+bugsnag-cli skill-install --target none       # select no targets, write nothing
+bugsnag-cli skill-install --local             # current project instead of home
+```
+
+Verify the file exists (opencode example):
+
+```bash
+ls ~/.agents/skills/bugsnag-cli/SKILL.md
+```
+
+Remove it later with:
+
+```bash
+bugsnag-cli skill-uninstall
+```
+
+---
+
+## Step 3: Check Existing Config
 
 Before asking for credentials, check what's already configured:
 
@@ -54,12 +126,12 @@ Before asking for credentials, check what's already configured:
 bugsnag-cli config-show
 ```
 
-- If `auth-token` is set, jump to Step 4 to verify.
-- If missing, proceed to Step 3.
+- If `auth-token` is set, jump to Step 5 to verify.
+- If missing, proceed to Step 4.
 
 ---
 
-## Step 3: Get Credentials
+## Step 4: Get Credentials
 
 One credential is required; the rest are defaults:
 
@@ -97,7 +169,7 @@ bugsnag-cli config-use staging   # Switch active
 
 ---
 
-## Step 4: Verify
+## Step 5: Verify
 
 ```bash
 # Check configuration (secrets masked)
@@ -194,7 +266,9 @@ For the full command surface, run `bugsnag-cli --help` (42 API commands).
 6. `comment-list` — existing investigation context
 7. `project-trend` / `project-stability` — zoom out to project health
 
-### Filters
+---
+
+## Filters
 
 `--filter` is repeatable: `k=v` (equals), `k=v1,v2` (any of), `k!=v` (not equals), `k:empty=true|false`. Field ids come from `event-fields`; performance filters use `trace-fields`.
 
@@ -249,14 +323,40 @@ export BUGSNAG_PROJECT=my-app
 **"HTTP 429"**
 → Rate limited; the CLI retries automatically with `Retry-After`. If it still fails, wait before retrying.
 
+**"HTTP 403" on `performance-overview`**
+→ The organization's plan lacks the `performance-scores` feature. Use `span-group-list` / `trace-spans` instead.
+
+**"60000" / sorted results unavailable**
+→ The API rejected the requested sort. The CLI retries once with `sort=unsorted`; if it still fails, pass `--sort unsorted` explicitly.
+
 **`--resolution` rejected**
 → Allowed values: `1m`, `5m`, `30m`, `2h`, `12h`.
+
+**`skill-install` writes nothing / target not detected**
+→ Pass an explicit target (`--target opencode`, `--target claude`, …), use `--target all`, or install locally with `--local`.
+
+**Permission denied on a skill directory**
+→ Use `--local` to install into the current project instead of the home directory.
 
 **"Unknown option"**
 → Typo. Run `bugsnag-cli <command> --help`.
 
 ---
 
+## The One-Liner
+
+For agents that trust copy-paste:
+
+```bash
+npm install -g bugsnag-cli && bugsnag-cli skill-install && bugsnag-cli config-show
+```
+
+This does not configure a token. The human must still run `bugsnag-cli config-set auth-token <token>` themselves.
+
+---
+
 ## Done
 
 You now have access to one or more BugSnag accounts from any terminal. The CLI is read-only by default; only run `error-update` / `error-bulk-update` with `--write` when a human explicitly asks for triage. Delete, issue linking, and comment writes stay in the Dashboard.
+
+Back to the [README](../../README.md).

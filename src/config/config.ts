@@ -65,13 +65,22 @@ function resolveProfile(args: MinimistArgs): ProfileConfig | undefined {
   return rc.profiles[name];
 }
 
+function hasExplicitProfile(args: MinimistArgs): boolean {
+  return Boolean(args.p || args.profile || process.env.BUGSNAG_PROFILE);
+}
+
 export interface LoadConfigOptions {
   requireAuth?: boolean;
 }
 
 export function loadConfig(args: MinimistArgs, options: LoadConfigOptions = {}): Config {
-  const profile = resolveProfile(args) ?? { 'auth-token': '', 'base-url': DEFAULT_BASE_URL };
-  const profileTyped = profile as unknown as Record<string, string>;
+  const profile = resolveProfile(args);
+  if (!profile && hasExplicitProfile(args)) {
+    const name = resolveProfileName(args);
+    throw new Error(`Profile '${name}' not found. Run: bugsnag-cli config-new ${name}`);
+  }
+  const resolvedProfile = profile ?? { 'auth-token': '', 'base-url': DEFAULT_BASE_URL };
+  const profileTyped = resolvedProfile as unknown as Record<string, string>;
 
   const authToken = (args['auth-token'] as string) || process.env.BUGSNAG_AUTH_TOKEN
     || profileTyped['auth-token'] || profileTyped.authToken || profileTyped['auth_token'];

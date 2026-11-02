@@ -64,6 +64,14 @@ describe('config', () => {
     assert.strictEqual(config['base-url'], 'https://api.bugsnag.com');
   });
 
+  it('rejects an explicitly requested missing profile', () => {
+    clearRc();
+    assert.throws(
+      () => loadConfig({ _: [], p: 'missing', 'auth-token': 'flag-token' }),
+      /Profile 'missing' not found/
+    );
+  });
+
   it('prefers CLI flag over env and profile', () => {
     writeRc({ default: { 'auth-token': 'profile-token', 'base-url': 'https://profile.example' } });
     process.env.BUGSNAG_AUTH_TOKEN = 'env-token';

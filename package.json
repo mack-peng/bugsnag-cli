@@ -1,6 +1,6 @@
 {
   "name": "bugsnag-cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "CLI for the BugSnag API — read-only by default; error triage writes require --write. AI agents and shell automation.",
   "keywords": [
     "bugsnag",

@@ -5,7 +5,7 @@
 `bugsnag-cli` — CLI for the BugSnag Data Access API. Default read-only; error triage writes require `--write`. Fetches errors, events, project health, releases, comments, and performance data for AI agents and shell automation. Entrypoint: `bin/bugsnag-cli.js` → `require('../dist/index')`.
 
 Build: `npm run build` (= `tsc` + `tsx scripts/generate-help.ts` → `dist/help.json`).
-Test: `npm test` (= `tsx --test tests/*.test.ts` — Node.js built-in test runner, 77 tests).
+Test: `npm test` (= `tsx --test tests/*.test.ts` — Node.js built-in test runner, 92 tests).
 Dependencies: `zod`. Dev: `typescript`, `@types/node`, `tsx`.
 Requirements truth: `docs/spec.md`; API truth: `docs/api/bugsnag-data-access-openapi.json` (SwaggerHub v2, 141 operations); coverage: `docs/api-coverage.md`.
 
@@ -83,6 +83,6 @@ src/
 
 ```
 npm run typecheck   # tsc --noEmit
-npm test            # 77 tests (minimist/command/output/client/filter/path)
+npm test            # 92 tests (minimist/command/output/client/filter/path/config)
 npm run build       # tsc + help.json (42 API commands)
 ```
